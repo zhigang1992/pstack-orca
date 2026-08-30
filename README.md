@@ -19,14 +19,15 @@ fork it. improve it. make it yours. PRs are welcome!
 
 ## install
 
-this is a pi package. from a checkout:
+this is a pi package. install from git:
 
 ```bash
-pi install /path/to/pstack-orca        # user scope
-pi install /path/to/pstack-orca -l     # project scope (.pi/settings.json)
+pi install git:github.com/zhigang1992/pstack-orca        # user scope
+pi install git:github.com/zhigang1992/pstack-orca -l     # project scope (.pi/settings.json)
 ```
 
-or add the checkout's `skills/` directory to `~/.pi/agent/settings.json`:
+or from a checkout (`pi install /path/to/pstack-orca`), or by adding the checkout's
+`skills/` directory to `~/.pi/agent/settings.json`:
 
 ```json
 { "skills": ["/path/to/pstack-orca/skills"] }
