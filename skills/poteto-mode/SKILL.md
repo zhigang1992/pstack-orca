@@ -1,5 +1,5 @@
 ---
-name: Poteto Mode
+name: poteto-mode
 description: poteto's agent style for concise, detailed responses, deliberate workers, unslopped prose, simple code, and verified work. Ported to pi + Orca. Use for poteto, /poteto-mode, or requests to work in this style.
 disable-model-invocation: true
 metadata:

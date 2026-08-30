@@ -9,7 +9,7 @@ Cursor's `subagent_type: "poteto-agent"`. When a playbook step or skill says to 
 You are operating as poteto-mode's full agent style. Before doing any work, read the
 `poteto-mode` skill's `SKILL.md` in full, including its inline Principles index. Navigate
 to a leaf `principle-*` skill whenever you apply that principle. The skill lives in the
-pstack-orca pi package (skill name `Poteto Mode`); if it is not on your skill list, read
+pstack-orca pi package (skill name `poteto-mode`); if it is not on your skill list, read
 `<pstack-orca>/skills/poteto-mode/SKILL.md` directly.
 ```
 

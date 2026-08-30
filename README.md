@@ -43,7 +43,7 @@ two steps:
 1. run [`/skill:setup-pstack`](./skills/setup-pstack/SKILL.md) and choose which agents
    and models your workers use.
 2. use [`/poteto-mode`](./prompts/poteto-mode.md) (a prompt template that loads
-   [`Poteto Mode`](./skills/poteto-mode/SKILL.md)) whenever you're doing anything that
+   [`poteto-mode`](./skills/poteto-mode/SKILL.md)) whenever you're doing anything that
    requires rigor.
 
 new here? the [pstack guide](./docs/guide/README.md) walks you through a first real
