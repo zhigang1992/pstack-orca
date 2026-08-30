@@ -5,10 +5,20 @@ description: Configure which agents and models pstack uses per role. Detects the
 
 # Setup pstack
 
-Write `~/.pi/agent/pstack-models.md`, the pstack role-to-worker config. Every value is an
-Orca worker launch spec: an agent CLI id, optionally followed by model flags. The skills
-read it and fall back to their inline defaults when a line is absent, so this is an
-override layer, not a requirement.
+Write the pstack role-to-worker config. Every value is an Orca worker launch spec: an
+agent CLI id, optionally followed by model flags. The skills read the config and fall
+back to their inline defaults when a line is absent, so this is an override layer, not
+a requirement.
+
+**The config has two scopes, checked in this order:**
+
+1. `.pstack-models.md` at the project root. Per-project and per-use-case; commit it to
+   share a team's worker policy with the repo.
+2. `~/.pi/agent/pstack-models.md`. Per-user, across all projects.
+
+A role set in the project file beats the user file; a role absent from both keeps the
+skill's inline default. The repo itself ships no config, so nothing user-specific leaks
+into a published copy.
 
 ## Steps
 
@@ -33,9 +43,12 @@ model apply.
 
 ### 2. Load current state
 
-The default role-to-worker mapping is the config shape shown in step 5 below. If
-`~/.pi/agent/pstack-models.md` already exists, read it and treat its values as the current
-choices. Otherwise start from those defaults.
+The default role-to-worker mapping is the config shape shown in step 5 below. Read the
+project file first, then the user file; a role set in the project file wins. If neither
+exists, start from the defaults.
+
+Ask which scope to write: project (shared with the team) or user (just you, everywhere).
+Default to user scope unless the user asked for a project or team setting.
 
 ### 3. Map and confirm
 
@@ -60,8 +73,9 @@ the user cannot run breaks every delegation that reads it.
 
 ### 5. Write the config
 
-Write `~/.pi/agent/pstack-models.md`, overwriting the whole file so re-runs stay
-idempotent. Shape:
+Write the chosen scope's file (`.pstack-models.md` at the project root, or
+`~/.pi/agent/pstack-models.md`), overwriting the whole file so re-runs stay idempotent.
+Shape:
 
 ```markdown
 # pstack worker configuration. One line per role: `<role>: <agent> [--model <slug>] [--effort <level>]`.
@@ -88,8 +102,14 @@ architect runners: claude, codex, grok, pi
 interrogate reviewers: claude, codex, grok, pi
 ```
 
-Unlike a Cursor `alwaysApply` rule, nothing injects this file into context. The skills
-read it explicitly at delegation time, which keeps it out of sessions that never delegate.
+Unlike a Cursor `alwaysApply` rule, nothing injects these files into context. The skills
+read them explicitly at delegation time, which keeps the config out of sessions that
+never delegate.
+
+Note on model flags: prefer agent ids without `--model`. pi, grok, and most agents run
+their own configured default model, so model selection stays in the harness where it
+belongs. Add `--model` only for agents Orca documents the passthrough for (Claude,
+Codex, Cursor) and only when the user named the model.
 
 ### 6. Confirm
 

@@ -25,7 +25,7 @@ The N candidates will receive the same prompt, so the prompt is the contract. Ge
 
 1. State the artifact each candidate is producing.
 2. Derive the rubric. State what success looks like for *this* task, then turn it into 3-6 concrete gradeable criteria. Concrete: `Adds a --dry-run flag that skips writes`. Vague: `code is correct`. The rubric is the picker's tool in Phase D; candidates only see the task.
-3. Pick the runners. Use `arena runners` from `~/.pi/agent/pstack-models.md` when present. Otherwise default to one worker each on `claude`, `codex`, `grok`, `pi`. Spawn more when the arena covers multiple design directions. Same agent N times when the work is generation-bound rather than judgment-sensitive.
+3. Pick the runners. Use `arena runners` from the pstack config (project `.pstack-models.md`, then user `~/.pi/agent/pstack-models.md`) when present. Otherwise default to one worker each on `claude`, `codex`, `grok`, `pi`. Spawn more when the arena covers multiple design directions. Same agent N times when the work is generation-bound rather than judgment-sensitive.
 4. Assign output paths. Each candidate writes to its own location (an Orca worktree where possible: `--worktree new-child --name arena-<slug>-<n> --setup run`; otherwise `/tmp/arena-<slug>/candidate-<n>/`). N candidates writing to the same path is shared mutable state and fails the the **separate-before-serializing-shared-state** principle skill test.
 
 ## Phase B: Fan out
@@ -45,7 +45,7 @@ If a candidate fails to produce output, proceed with N-1 and note the dropout in
 
 ## Phase C: Cross-judge
 
-After all Phase B candidates complete, choose one agent from the `arena cross-judge pool` in `~/.pi/agent/pstack-models.md` when present. Otherwise pick from `claude`, `codex`, `grok`, `pi`. Prefer a different agent family from your own. Dispatch one read-only judge worker on that agent (`--worktree current`; the brief says report-only, no edits). It sees the rubric and the candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with your reading in Phase D, not with the candidates themselves. Spawning while candidates are still writing means the judge sees partial or empty outputs and reports them as dropouts.
+After all Phase B candidates complete, choose one agent from the `arena cross-judge pool` in the pstack config (project file first, then user file) when present. Otherwise pick from `claude`, `codex`, `grok`, `pi`. Prefer a different agent family from your own. Dispatch one read-only judge worker on that agent (`--worktree current`; the brief says report-only, no edits). It sees the rubric and the candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with your reading in Phase D, not with the candidates themselves. Spawning while candidates are still writing means the judge sees partial or empty outputs and reports them as dropouts.
 
 ## Phase D: Pick a base
 

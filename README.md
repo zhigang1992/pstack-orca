@@ -301,6 +301,33 @@ a few things the original pstack references don't carry over:
 personally, i don't believe in planning. the best spec is code. if you do want to make a
 plan, `/poteto-mode` covers it, but it's not a default.
 
+## configuration: yours, your team's, or nobody's
+
+pstack-orca ships **zero user configuration**. nothing in this repo names your models,
+your plans, or your paths, so a published copy is safe as-is. the role-to-worker mapping
+is layered, most specific first:
+
+1. **project** `.pstack-models.md` at the repo root. per-project and per-use-case; commit
+   it to share a team's worker policy with the code it applies to.
+2. **user** `~/.pi/agent/pstack-models.md`. your defaults across every project.
+3. **skill inline defaults.** `grok` / `codex` / `claude` / `pi`, mirroring the original
+   pstack's split of fast mechanical, precise execution, judgment, and a fourth panel
+   family.
+
+a role set in the project file beats the user file; a role absent from both keeps the
+skill default. [`/skill:setup-pstack`](./skills/setup-pstack/SKILL.md) writes either scope
+after detecting which agent CLIs Orca can actually launch on the machine.
+
+two properties make this portable:
+
+- **config values are agent ids, not model slugs.** agents run their own configured
+  default model (a pi worker inherits pi's default model), so model and plan choices
+  stay in each user's harness where they belong. `--model` exists only as an optional
+  passthrough for the agents Orca documents it for.
+- **`inherit-parent` / `auto` is a first-class value.** a user with a single agent (one
+  plan, one CLI) sets roles to `inherit-parent` and the whole system still works; panels
+  just lose their cross-family signal, which the skills say out loud instead of hiding.
+
 ## make it yours
 
 `poteto-mode` is poteto's style. you may not want exactly that.
@@ -310,10 +337,10 @@ sessions, drafts a `<your-name>-mode` skill from how you've actually worked, and
 through pstack underneath. you keep pstack as the base and end up with your own routing
 skill alongside `poteto-mode`.
 
-agents are configurable too. type [`/skill:setup-pstack`](./skills/setup-pstack/SKILL.md).
-it detects the agent CLIs Orca can launch and writes a small config file mapping each
-role (code, judgment, the review panels) to an agent. every skill reads it and falls back
-to sensible defaults when the file is absent, so you override only what you want.
+type [`/skill:setup-pstack`](./skills/setup-pstack/SKILL.md) to configure agents. it
+detects the agent CLIs Orca can launch and writes the config file for the scope you pick
+(project or user). every skill reads it and falls back to sensible defaults when it's
+absent, so you override only what you want.
 
 ## automations
 
