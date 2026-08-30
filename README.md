@@ -71,7 +71,7 @@ changes any of it.
 | `cursor-team-kit` (`deslop`, `control-ui`, `control-cli`) | `unslop` covers prose; real-surface driving uses **ego-browser** (web) and the real CLI/TUI in a terminal |
 | cursor built-ins (`create-skill`, babysit, plan mode) | the [authoring-a-skill playbook](./skills/poteto-mode/playbooks/authoring-a-skill.md) and the [babysit playbook](./skills/poteto-mode/playbooks/babysit.md) |
 
-[`MIGRATION.md`](./MIGRATION.md) has the full mapping and the reasoning behind each call.
+[`MIGRATION.md`](./MIGRATION.md) has the full mapping and the reasoning behind each call. [`docs/harnesses.md`](./docs/harnesses.md) covers running pstack-orca from Claude Code, Codex, and Grok — as Orca workers (first-class, that's the multi-model design) and as your primary harness instead of pi (`./scripts/install-harnesses.sh` symlinks the skills into `~/.claude/skills/` and `~/.codex/skills/`).
 
 ## usage
 

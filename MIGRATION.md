@@ -73,6 +73,15 @@ from Orca for free.
   routines. Recreating it needs an incoming-webhook surface Orca doesn't expose to
   automations today.
 
+## Other harnesses
+
+Claude Code, Codex, and Grok are first-class as Orca workers (the default role config
+dispatches them), and the skills load in Claude Code and Codex as a primary harness too,
+via the shared Agent Skills standard. See `docs/harnesses.md` for the worker vs primary
+distinction, the per-harness session stores that `recall`/`reflect`/`automate-me` would
+need, and `scripts/install-harnesses.sh` for symlinking the skills into
+`~/.claude/skills/` and `~/.codex/skills/`.
+
 ## Verifying the port
 
 ```bash
