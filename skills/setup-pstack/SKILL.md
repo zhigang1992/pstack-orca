@@ -1,6 +1,6 @@
 ---
 name: setup-pstack
-description: Configure which agents pstack uses per role. Detects the agent CLIs Orca can launch and writes the Claude Code rule that overrides the skill defaults. Use for /setup-pstack, "configure pstack models", or changing pstack's agent choices.
+description: Configure which Claude model pstack uses per role. Detects the models Orca can pin on Claude Code and writes the rule that overrides the skill defaults. Use for /setup-pstack, "configure pstack models", or changing pstack's model choices.
 ---
 
 # Setup pstack
@@ -27,15 +27,13 @@ leaks into a published copy.
 
 ### 1. Detect available agents
 
-Enumerate the agent CLIs Orca can launch as workers. `command -v` each of the known ids:
-`pi`, `claude`, `codex`, `grok`, `opencode`, `kimi`, `cursor-agent`. A binary on PATH is
-not enough. The dependable set is the `agent` values in Orca's
-`agent-model-catalog.json` (under Application Support), because that is what has
-actually launched. Do not write an id that is absent from it. `claude` can be present
-and still not be a second family: if its `opus`, `sonnet`, and `haiku` entries resolve
-to a Magpie group, treat bare `claude` as `inherit-parent`. See `docs/routing.md`.
-Never write a `--model` you have not confirmed against that catalog or the agent's own
-help. The aliases `inherit-parent` and `auto` are always valid.
+The only worker agent is `claude`. Confirm that id is in Orca's
+`agent-model-catalog.json` (under Application Support). Models are that agent's
+discovered entries whose `resolvedModel` is not a Magpie group. `opus`, `sonnet`, and
+`haiku` resolve to `group/never-stuck`. They are not distinct models. Do not write them,
+and do not write `--agent codex`, `grok`, `pi`, `opencode`, or `cursor`. See
+`docs/routing.md`. Never write a `--model` you have not confirmed against that catalog.
+The aliases `inherit-parent` and `auto` are always valid.
 
 Workers launch through Orca orchestration:
 
@@ -86,53 +84,47 @@ the same bytes to `~/.pi/agent/pstack-models.md`. Project scope writes
 `.pstack-models.md` only. Shape:
 
 ```markdown
-# pstack worker configuration. One line per role: `<role>: <agent> [--model <slug>] [--effort <level>]`.
+# pstack worker configuration. One line per role: `<role>: claude --model <slug>`.
 # Delete a line to fall back to the skill default.
 # Lookup, first hit wins: project `.pstack-models.md`, this file, `~/.pi/agent/pstack-models.md`.
 # Contract: docs/routing.md in the pstack-orca checkout.
 #
-# inherit-parent or auto: this session does the role. No model pin. No --agent claude.
-# A Claude model pin is not a second family. Magpie resolves opus, sonnet, and haiku
-# to group/never-stuck[1m]. That group fails over one seat at a time across Claude,
-# Codex, Grok, Cursor, and Kimi. It does not run them together.
-# codex, grok, pi, opencode, cursor: Orca worker-start --agent <id>.
-# Do not pass that word as a Claude Agent model. Do not pass a Magpie group as --model.
-# budget: medium (high). Parent effort only. Workers use their CLI default.
+# Every worker is --agent claude. Do not write codex, grok, or pi.
+# inherit-parent or auto: this session. No extra worker.
+# opus, sonnet, and haiku resolve to group/never-stuck. Never write those aliases.
+# budget: medium (high). Parent effort only.
 
-# parent thinks
+# this session
 judgment and prose: inherit-parent
-hardest tasks: inherit-parent
 how explainer: inherit-parent
 why synthesizer: inherit-parent
 reflect judgment, divergent, synthesizer: inherit-parent
 
-# codex executes a brief
-bug-fix: codex
-perf-issue: codex
-hillclimb: codex
-reflect tooling: codex
+hardest tasks: claude --model claude-fable-5-1
 
-# grok does fast edits and bulk reads
-feature, refactoring: grok
-how explorer: grok
-why investigators: grok
-swarm workers: grok
+bug-fix: claude --model claude/claude-opus-5-5
+perf-issue: claude --model claude/claude-opus-5-5
+hillclimb: claude --model claude/claude-opus-5-5
+reflect tooling: claude --model claude/claude-opus-5-5
 
-# three families. list length is the fan-out. judge pool puts codex first.
-how critics: codex, grok, pi
-arena runners: codex, grok, pi
-arena cross-judge pool: codex, pi, grok
-architect runners: codex, grok, pi
-interrogate reviewers: codex, grok, pi
+feature, refactoring: claude --model claude/claude-sonnet-5-5
+how explorer: claude --model claude/claude-sonnet-5-5
+why investigators: claude --model claude/claude-sonnet-5-5
+swarm workers: claude --model claude/claude-sonnet-5-5
+
+how critics: claude --model claude-fable-5-1, claude --model claude/claude-opus-5-5, claude --model claude/claude-sonnet-5-5
+arena runners: claude --model claude-fable-5-1, claude --model claude/claude-opus-5-5, claude --model claude/claude-sonnet-5-5
+arena cross-judge pool: claude --model claude-fable-5-1, claude --model claude/claude-sonnet-5-5, claude --model claude/claude-opus-5-5
+architect runners: claude --model claude-fable-5-1, claude --model claude/claude-opus-5-5, claude --model claude/claude-sonnet-5-5
+interrogate reviewers: claude --model claude-fable-5-1, claude --model claude/claude-opus-5-5, claude --model claude/claude-sonnet-5-5
 ```
 
 Claude Code injects `~/.claude/rules/pstack-models.md` into every new session. Skills
 still read it at delegation time. The pi path is a mirror, not a second source.
 
-Prefer agent ids without `--model`. pi and grok run their own configured default, and
-pi's default is the kimi seat. Add `--model` only when the user named one that Orca's
-catalog lists for that agent. The only Claude pin that leaves the failover group is
-`claude-fable-5-1`.
+Every worker line names `--agent claude` and a `--model` whose catalog `resolvedModel`
+is not a Magpie group. `claude-fable-5-1`, `claude/claude-opus-5-5`, and
+`claude/claude-sonnet-5-5` are the distinct pins. The short aliases are not.
 
 ### 6. Confirm
 

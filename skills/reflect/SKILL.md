@@ -24,12 +24,12 @@ That covers the legacy flat (`<id>.jsonl`), current nested (`<id>/<id>.jsonl`), 
 
 One turn, three workers. Reviewers need access to the tickets, chat threads, and observability traces the transcript references. The brief allows those reads and forbids writing the repo.
 
-Each reviewer and the synthesizer name a role line and a default. Lookup and launch follow the Workers section of **poteto-mode**. Do not pass a model slug.
+Each reviewer and the synthesizer name a role line and a default. Lookup and launch follow the Workers section of **poteto-mode**. The agent is `claude`. Pass only the model that line names.
 
 | Lens | Role line | Default agent | Prompt template |
 |---|---|---|---|
 | Judgment | `reflect judgment, divergent, synthesizer` | `inherit-parent` | `references/judgment-reviewer.md` |
-| Tooling | `reflect tooling` | `codex` | `references/tooling-reviewer.md` |
+| Tooling | `reflect tooling` | `claude --model claude/claude-opus-5-5` | `references/tooling-reviewer.md` |
 | Divergent | `reflect judgment, divergent, synthesizer` | `inherit-parent` | `references/divergent-reviewer.md` |
 
 Pass each template verbatim, substituting the transcript path or digest where marked. Reviewers return findings in the worker report.
@@ -48,14 +48,14 @@ Present the synthesizer's full Accepted / Rejected / Backlog output and wait for
 
 File each Backlog item to your team's devex or backlog tracker without waiting. Only the Accepted list waits for approval.
 
-Never edit a skill under `plugins/cache/`. Before approval, show its destination, `.cursor/skills/<skill>/` or `~/.cursor/skills/<skill>/`. After approval, copy the skill folder there and edit the copy. Never open a PR or push.
+Never edit a skill under `plugins/cache/` or a Magpie library copy. Before approval, show its destination, `.claude/skills/<skill>/` or `~/.claude/skills/<skill>/`. After approval, copy the skill folder there and edit the copy. Do not write `.cursor/skills/` or `~/.cursor/skills/`. Never open a PR or push.
 
 Follow each approved row's Routing exactly:
 
 - Trivial existing-skill edit (a one-line bullet, a tightened sentence, a stale fact corrected): the parent does it directly.
-- Substantive existing-skill edit (a new section, a new pattern table, more than ~10 lines): hand to Cursor's built-in `create-skill` skill and run its draft / test / iterate loop.
-- `tune description: <skill path>` (the skill exists but didn't trigger when it should have): hand to `create-skill` and run its description-optimization loop.
-- `new skill via create-skill: <kebab-name>`: hand creation to `create-skill`. Do not invent the shape ad hoc.
+- Substantive existing-skill edit (a new section, a new pattern table, more than ~10 lines): hand it to the authoring-a-skill playbook and run its draft / test / iterate loop. There is no Cursor `create-skill` tool.
+- `tune description: <skill path>` (the skill exists but didn't trigger when it should have): hand it to that playbook and run its description-optimization loop.
+- `new skill via create-skill: <kebab-name>`: hand creation to that playbook. Do not invent the shape ad hoc. Write it under `.claude/skills/` or `~/.claude/skills/`.
 
 If your environment ships a SKILL.md validator, run it on every touched skill before declaring done.
 

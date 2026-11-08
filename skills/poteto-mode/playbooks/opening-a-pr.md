@@ -2,11 +2,11 @@
 
 Invoked at the end of every other playbook.
 
-**Worktree.** Work from a git worktree off main. An Orca worker on `--worktree current` inherits it. Two workers that would write the same branch each get `--worktree new-child`, or one finishes and the next does `git fetch && git reset --hard origin/<branch>` before it starts. Dirty branch with unrelated work: patch out, fresh worktree, apply. Snarled worktree: reset from main, redo minimally.
+**Worktree.** Work from a git worktree off main. An Orca worker on `--worktree current` inherits this workspace. A separate worker gets its own Orca workspace (`--worktree new-top-level`), not a terminal and not a second writer in this checkout. Two workers that would otherwise write the same branch each get their own workspace, or one finishes and the next does `git fetch && git reset --hard origin/<branch>` before it starts. Dirty branch with unrelated work: patch out, fresh workspace, apply. Snarled worktree: reset from main, redo minimally.
 
 **Commits.** Commit liberally. Rebase into small, ordered commits before opening PRs. Each commit is a future PR: landable, ordered to tell the story. Amend when the fix belongs in a just-made commit. New commit when separable. Commit bodies don't restate the subject.
 
-**PRs.** Run `/deslop` from `cursor-team-kit` over the diff before commit and `/no-comments` before review. Write every PR title, description, and commit body with `/technical-writing` (every layer except Diátaxis, and apply the STE vocabulary rules: one word per action, keep articles, a plain verb over `-ing` where one works), then apply `/unslop`.
+**PRs.** Run `/unslop` over prose before commit and `/no-comments` before review. Do not run `/deslop`. Write every PR title, description, and commit body with `/technical-writing` (every layer except Diátaxis, and apply the STE vocabulary rules: one word per action, keep articles, a plain verb over `-ing` where one works), then apply `/unslop`.
 
 **Titles.** Conventional Commits `type(scope): subject`, no trailing period. Type such as `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, or `perf`. Scope is the area, such as `pstack` or `poteto-mode`. Subject is short, imperative, and names a real symbol when one carries the change, for example `fix(pstack): retarget opening-a-pr babysit trigger`.
 
@@ -31,4 +31,4 @@ After the sections, attach videos or screenshots when they prove a claim. Full S
 
 **Babysit.** Opening a PR does not start a babysit. Post the URL and keep building. Finish the phase or stack first. Run a separate babysit pass only when the user asks for one after the whole stack exists. A babysit for each new PR stalls the build and spends checks on commits later waves restart. Push back when feedback drifts from intent.
 
-A subagent that opens a PR runs `/deslop` and `/no-comments`, and posts the URL. It returns to the parent without babysitting, unless it is an Autopilot-full or Autopilot-stack owner. That owner's brief assigns the babysit loop and is the ask `playbooks/babysit.md` waits for. The owner starts the loop after its code-ready report, reports merge-ready, and is exempt from the rules here and in `playbooks/babysit.md` that hold babysitting until a whole stack is built.
+A worker that opens a PR runs `/unslop` and `/no-comments`, and posts the URL. Do not run `/deslop`. It returns to the parent without babysitting, unless it is an Autopilot-full or Autopilot-stack owner. That owner's brief assigns the babysit loop and is the ask `playbooks/babysit.md` waits for. The owner starts the loop after its code-ready report, reports merge-ready, and is exempt from the rules here and in `playbooks/babysit.md` that hold babysitting until a whole stack is built.

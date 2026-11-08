@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Explore the codebase to answer "how does X work?" questions. Produce architectural explanations at the level of a senior engineer onboarding onto a subsystem, enough to build a working mental model, not so much that it reads like annotated source code.
 
-Explorers and explainers are workers, not Task subagents. The brief says read-only. Explorers use the `how explorer` line (default `grok`). Every explainer uses the `how explainer` line (default `inherit-parent`, this session). Lookup and launch follow the Workers section of **poteto-mode**. Do not pass a model slug.
+Explorers and explainers are Claude Code workers, not Task subagents. The brief says read-only. Explorers use the `how explorer` line (default `claude --model claude/claude-sonnet-5-5`). Every explainer uses the `how explainer` line (default `inherit-parent`, this session). Lookup and launch follow the Workers section of **poteto-mode**. Pass only the model that line names.
 
 ## 1. Assess complexity
 

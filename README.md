@@ -14,7 +14,7 @@ but higher quality code.
 **pstack gives you fearless parallelism.** when you can go deep on one agent and trust it
 to write good, verifiable code, you can truly parallelize with confidence. start multiple
 workers up with `poteto-mode` and trust that they'll apply rigorous engineering
-principles to their work. under Orca those workers are real terminals with task
+principles to their work. under Orca those workers are coding agents, each in its own workspace, with task
 provenance and `worker_done` reporting, not fire-and-forget prompts.
 
 fork it. improve it. make it yours. PRs are welcome!
@@ -52,11 +52,12 @@ new here? the [pstack guide](./docs/guide/README.md) walks you through a first r
 task, from setup and prompting through verification and overnight runs.
 
 that's it. the other skills are situational; the mode skill uses them for you as needed.
-out of the box the parent session does judgment and the hardest calls. a brief that
-must be executed to the letter goes to an Orca `codex` worker. fast edits and bulk
-reads go to `grok`. review panels are `codex`, `grok`, and `pi` (pi's default model is
-the kimi seat). a Claude model pin is not a fourth family. [`docs/routing.md`](./docs/routing.md)
-says why, and [`/skill:setup-pstack`](./skills/setup-pstack/SKILL.md) changes any of it.
+out of the box every worker is Claude Code. the parent session does judgment.
+the hardest calls go to `claude-fable-5-1`. a brief that must be executed to the
+letter goes to `claude/claude-opus-5-5`. fast edits and bulk reads go to
+`claude/claude-sonnet-5-5`. a review panel is those three models, not three
+harnesses. [`docs/routing.md`](./docs/routing.md) says why, and
+[`/skill:setup-pstack`](./skills/setup-pstack/SKILL.md) changes any of it.
 
 ## how the port works
 
@@ -331,29 +332,26 @@ is layered, most specific first:
 2. **user** `~/.claude/rules/pstack-models.md`. your defaults across every project.
    Claude Code loads this file into every new session. `~/.pi/agent/pstack-models.md`
    is a mirror of it, kept so an old lookup cannot disagree.
-3. **skill inline defaults.** the parent thinks (`inherit-parent`). `codex` executes a
-   brief. `grok` does fast edits and bulk reads. panels are `codex, grok, pi`.
+3. **skill inline defaults.** the parent thinks (`inherit-parent`). workers are
+   `claude` plus a model pin: fable for the hardest calls, Opus 5.5 to execute a
+   brief, Sonnet 5.5 for fast edits and bulk reads. panels are those three models.
 
 a role set in the project file beats the user file; a role absent from all three keeps
 the skill default. [`/skill:setup-pstack`](./skills/setup-pstack/SKILL.md) writes the
-user file after detecting which agent CLIs Orca has actually launched.
+user file after checking which Claude models Orca's catalog resolves to themselves.
 
-why the defaults look like that is [`docs/routing.md`](./docs/routing.md). the short
-version: under Magpie, pinning opus, sonnet, or haiku does not pick a family. those
-names resolve to one failover group. a Claude Code subagent is that same group. Codex,
-Grok, and pi (pi's default model is the kimi seat) are the three families a panel can
-hold, and they run as Orca workers.
+why the defaults look like that is [`docs/routing.md`](./docs/routing.md). what to
+re-apply after taking a newer upstream tree is [`docs/upstream-sync.md`](./docs/upstream-sync.md). the short
+version: the harness is always Claude Code. under Magpie, the short names opus,
+sonnet, and haiku all resolve to one failover group, so a pin uses the full id.
 
 two properties make this portable:
 
-- **config values are agent ids, not model slugs.** agents run their own configured
-  default model (a pi worker inherits pi's default model), so model and plan choices
-  stay in each user's harness where they belong. `--model` exists only as an optional
-  passthrough, and a Magpie group id is not a legal one.
-- **`inherit-parent` / `auto` is a first-class value.** it means this session, not a
-  spawned Claude worker. a user with a single agent sets every role to it and the
-  system still works. panels just lose their cross-family signal, which the skills say
-  out loud instead of hiding.
+- **the agent id is always `claude`.** the model pin is what changes. a Magpie group
+  id is not a legal pin, and neither is the short alias that collapses to it.
+- **`inherit-parent` / `auto` is a first-class value.** it means this session. a user
+  who wants no fan-out sets every role to it and the system still works. panels just
+  lose their cross-model signal, which the skills say out loud instead of hiding.
 
 ## make it yours
 

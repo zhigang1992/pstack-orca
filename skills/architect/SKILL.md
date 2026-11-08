@@ -28,7 +28,7 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt.
 
-Take the runners from the `architect runners` line, same lookup as the **arena** skill, in place of the `arena runners` line. If the line is missing, use `codex`, `grok`, and `pi`. A failed launch follows the runner rules in the **arena** skill's Phase A.
+Take the runners from the `architect runners` line, same lookup as the **arena** skill, in place of the `arena runners` line. If the line is missing, use one Claude Code worker on each of `claude-fable-5-1`, `claude/claude-opus-5-5`, and `claude/claude-sonnet-5-5`. A failed launch follows the runner rules in the **arena** skill's Phase A.
 
 Design it twice. Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is the **exhaust-the-design-space** principle skill made concrete. Whole-shape alternatives, not point fixes inside one shape.
 

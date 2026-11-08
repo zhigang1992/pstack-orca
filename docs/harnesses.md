@@ -10,15 +10,15 @@ This is the design center of the port. Every fan-out skill (`swarm`, `arena`, `h
 default role config already spreads work across agent families:
 
 ```bash
-orca orchestration worker-start --task <id> --worktree current --agent claude --json
-orca orchestration worker-start --task <id> --worktree current --agent codex --json
-orca orchestration worker-start --task <id> --worktree current --agent grok --json
+orca orchestration worker-start --task <id> --worktree current --agent claude --model claude-fable-5-1 --json
+orca orchestration worker-start --task <id> --worktree current --agent claude --model claude/claude-opus-5-5 --json
+orca orchestration worker-start --task <id> --worktree current --agent claude --model claude/claude-sonnet-5-5 --json
 ```
 
-The defaults are in [`routing.md`](./routing.md). The parent session (Claude Code, via
-Magpie's failover group) does judgment. `codex` and `grok` are Orca workers. `pi` is the
-third panel family, not the parent. `/skill:setup-pstack` writes
-`~/.claude/rules/pstack-models.md` and will not assign an agent Orca has never launched.
+The defaults are in [`routing.md`](./routing.md). The parent session does judgment. Every
+worker is `--agent claude` with one of those pins. Do not start a Codex, Grok, or pi
+process. `/skill:setup-pstack` writes `~/.claude/rules/pstack-models.md` and will not
+write a model the catalog resolves to a Magpie group.
 
 What a worker sees when it starts:
 
@@ -26,15 +26,12 @@ What a worker sees when it starts:
   and the poteto style rides along via `briefs/poteto-worker.md`, which instructs the
   worker to read `skills/poteto-mode/SKILL.md` *by path*. That works for any agent that
   can read a file, no skill system required.
-- **Skill discovery inside the worker is per-harness.** A claude worker only
-  auto-discovers pstack's skills if they're visible to Claude Code (`~/.claude/skills/`,
-  project `.claude/skills/`), a codex worker likewise (`~/.codex/skills/`). Grok has no
-  documented skill discovery; brief-by-path is the only mechanism, which is fine for the
-  mechanical-code role it fills. `scripts/install-harnesses.sh` symlinks the repo's
-  skills into the claude and codex user skill directories.
-- **`--model` / `--effort` passthrough is per-agent.** Orca documents these for Claude,
-  Codex, and Cursor launches. pi and grok workers run their own configured default
-  model; set it in that agent's own settings, not in pstack's config.
+- **Skill discovery inside the worker is Claude Code's.** A worker auto-discovers
+  pstack's skills only if they're visible to Claude Code (`~/.claude/skills/`, project
+  `.claude/skills/`). The brief also names files by path, which needs no skill install.
+  `scripts/install-harnesses.sh` symlinks the repo's skills into `~/.claude/skills/`.
+- **`--model` is required on a worker.** Orca accepts it for a fresh Claude Code
+  terminal. Pass the full id from the role line. Do not pass a short alias.
 
 Nothing about the orchestration protocol itself is pi-specific. `worker_done`, `ask`,
 heartbeats, and decision gates are `orca` CLI calls; any agent running in an Orca

@@ -1,16 +1,21 @@
-# Routing: Claude Code parent, Orca for a real second family
+# Routing: Claude Code, different models
 
-The primary harness is Claude Code. Orca is how a role leaves that process and runs on a different agent CLI. pi is one of those CLIs, not the parent.
+The harness is Claude Code for the parent and for every worker. A worker is not a Codex, Grok, or pi process. Orca only starts another Claude Code terminal:
 
-Upstream pstack (https://github.com/cursor/plugins/tree/main/pstack) already installs in Claude Code and writes this same role file. Its Claude adapter then drops every non-Claude model slug onto the session model. That is the wrong behavior here. A role that names `codex`, `grok`, `pi`, `opencode`, `opencode2`, or `cursor` is an Orca worker, not a Claude model pin.
+```bash
+orca orchestration task-create --spec "<brief>" --json
+orca orchestration worker-start --task <id> --worktree current --agent claude --model <slug> --json
+```
+
+Do not pass `--agent codex`, `grok`, `pi`, `opencode`, `opencode2`, or `cursor`. Do not call Claude Code `Task` with a model slug. Upstream's Claude adapter drops non-Claude slugs onto the session model.
 
 ## Where the file is read
 
 First hit wins. A role missing from all three keeps the skill's inline default.
 
 1. Project `.pstack-models.md` at the repo root. Commit it when a repo's worker policy should travel with the code.
-2. User `~/.claude/rules/pstack-models.md`. Claude Code loads every file in that directory into each new session, so the lines are already in context. Skills still read the file when they are about to dispatch, in case the session did not.
-3. User `~/.pi/agent/pstack-models.md`. Legacy path from the pi port. Keep it identical to the Claude file, or delete it. Do not let the two disagree.
+2. User `~/.claude/rules/pstack-models.md`. Claude Code loads every file in that directory into each new session. Skills still read the file when they are about to dispatch.
+3. User `~/.pi/agent/pstack-models.md`. Legacy mirror. Keep it identical to the Claude file, or delete it.
 
 `/skill:setup-pstack` writes the Claude file by default and mirrors it to the pi path.
 
@@ -18,40 +23,32 @@ First hit wins. A role missing from all three keeps the skill's inline default.
 
 | Value | What runs |
 |---|---|
-| `inherit-parent`, `auto` | This session. No model pin. Do not spawn a Claude subagent just to pick opus, sonnet, or haiku. A panel entry still counts as one seat. |
-| `codex`, `grok`, `pi`, `opencode`, `opencode2`, `cursor` | `orca orchestration worker-start --agent <id>`. Do not pass the word as a Claude `Agent` model. |
-| `claude` | Not a second family. Treat it as `inherit-parent`. |
-| `claude` with `--model claude-fable-5-1` | The one Claude pin that is not the failover group. Use it only on a line that names that model. |
+| `inherit-parent`, `auto` | This session. No extra worker. A panel entry still counts as one seat. |
+| `claude --model <slug>` | An Orca worker, `--agent claude`, pinned to that model. |
 
-Do not pass `--model` unless the line contains one. Never pass a Magpie group id (`group/never-stuck`, `magpie/group/never-stuck`) to an Orca worker. That hands the seat back to the parent's pool and the panel stops being a panel.
+Pass `--model` only when the line names one. Pass `--effort` only when the line names one.
 
-## Why Claude is not a family on this machine
+The short aliases `opus`, `sonnet`, and `haiku` are not models on this machine. Orca's catalog resolves all three to `group/never-stuck[1m]`, one failover seat. Never pass those aliases, and never pass `group/never-stuck` or `magpie/group/never-stuck`.
 
-Magpie sits in front of Claude Code. Orca's model catalog resolves `opus`, `sonnet`, and `haiku` to `group/never-stuck[1m]`. The group fails over, in one seat, across:
+Pins that resolve to themselves, and so stay distinct:
 
+- `claude-fable-5-1`
 - `claude/claude-opus-5-5`
 - `claude/claude-sonnet-5-5`
-- `codex/gpt-6-astra` and `codex/gpt-6.1-sol`
-- `grok/grok-4.7@500k`
-- `cursor/grok-4.7@500k`
-- `kimi/k3.1-pro`
 
-Failover is one model at a time. It is not four models answering together. `fable` resolves to `claude-fable-5-1` and is the exception.
-
-Orca agents actually discovered on this machine: `claude`, `codex`, `grok`, `pi`, `opencode`, `opencode2`. `cursor` and `kimi` have CLIs, and Orca's help text names `cursor`, but neither is in the local catalog until a launch succeeds. pi's own default model is the kimi seat. Do not add `cursor` to a panel until `orca agent launch --agent cursor` has worked once.
-
-`--agent codex` launches Codex's own model list (GPT-6 and GPT-5.6), not the group. `--agent grok` launches native `grok-4.7`. Those two, plus pi, are the three families a panel can hold.
+A panel is three of those, not three harnesses. List length is the fan-out.
 
 ## The default
 
-The parent thinks. A worker gets a brief. A panel is three families, and none of them is `claude`.
+The parent session does judgment. A worker is another Claude Code on a pinned model.
 
 | Roles | Who | Why |
 |---|---|---|
-| judgment and prose, hardest tasks, how explainer, why synthesizer, reflect judgment | `inherit-parent` | The session is already the best member of the group. A second Claude process cannot leave it. |
-| bug-fix, perf-issue, hillclimb, reflect tooling | `codex` | The Codex plan, spent on purpose, on work that is a spec to execute. |
-| feature, refactoring, how explorer, why investigators, swarm workers | `grok` | Fast mechanical edits and bulk reads, concurrent with the parent. |
-| how critics, arena runners, architect runners, interrogate reviewers | `codex, grok, pi` | One seat per family. List length is the fan-out. |
-| arena cross-judge pool | `codex, pi, grok` | Same three. Codex is first because the parent is often already Grok via failover, and the judge must be a different family. |
+| judgment and prose, how explainer, why synthesizer, reflect judgment | `inherit-parent` | This session already holds the decision. |
+| hardest tasks | `claude --model claude-fable-5-1` | The pin that is not the failover group. |
+| bug-fix, perf-issue, hillclimb, reflect tooling | `claude --model claude/claude-opus-5-5` | A pinned Opus, not the `opus` alias. |
+| feature, refactoring, how explorer, why investigators, swarm workers | `claude --model claude/claude-sonnet-5-5` | The faster Claude model, still Claude Code. |
+| how critics, arena runners, architect runners, interrogate reviewers | fable, Opus 5.5, Sonnet 5.5 | One seat per model. |
+| arena cross-judge pool | fable, then Sonnet 5.5, then Opus 5.5 | Fable is first because this session is the group, not Fable. The judge skips the parent's model. |
 
-`# budget: medium (high)` is the parent's effort. Workers use their CLI's own default unless the line adds `--effort`.
+`# budget: medium (high)` is the parent's effort. Workers use the pinned model's own default unless the line adds `--effort`.

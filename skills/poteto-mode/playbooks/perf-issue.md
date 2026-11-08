@@ -14,7 +14,7 @@
    7. Do it cheaper.
 
    When an earlier mantra meets the target, stop.
-3. Plan the fix from the trace. If it crosses a function boundary, `architect` first. Delegate implementation to a subagent using your configured perf-issue worker (default `codex`). Launch it the way the Workers section says. Do not pass a model slug. Review the diff. Capture a post-fix trace.
+3. Plan the fix from the trace. If it crosses a function boundary, `architect` first. Delegate implementation to a subagent using your configured perf-issue worker (default `claude --model claude/claude-opus-5-5`). Launch it the way the Workers section says. The worker is `--agent claude` with only the model on the role line. Review the diff. Capture a post-fix trace.
    Apply the **sequence-verifiable-units** principle skill, verifying each attempt before trying the next.
 4. Parse and compare the artifacts (JSON to sqlite, diff). "Inconclusive" or wrong-surface is not a pass. Flag it.
 5. Cite the measurement in the PR.

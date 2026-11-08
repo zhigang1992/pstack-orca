@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Investigate the motivation and intent behind code. The companion `how` skill answers what the code does and how it works. `why` answers what forces led to its shape.
 
-Each spawn below names a role line and a default. Lookup and launch follow the Workers section of **poteto-mode**. Do not pass a model slug.
+Each spawn below names a role line and a default. Lookup and launch follow the Workers section of **poteto-mode**. The agent is `claude`. Pass only the model that line names.
 
 Investigators and the synthesizer need the evidence tools the transcript points at. The brief allows those reads and forbids writing the repo. Do not mark the worker read-only in a way that strips those tools.
 
@@ -46,7 +46,7 @@ Map each available MCP to one evidence category:
 
 Source control is always available through git and `gh`. For the other six, classify using the MCP name, server instructions, tool names, and resource descriptors. If an MCP could fit more than one category, choose the one matching its primary evidence. Record ambiguous cases in the coverage map.
 
-Spawn one investigator per category that has a matching MCP, all in a single message so they run concurrently, each owning exactly one tool or MCP. Don't ask one agent to cover multiple MCPs. Agent: the `why investigators` line, default `grok`.
+Spawn one investigator per category that has a matching MCP, all in a single message so they run concurrently, each owning exactly one tool or MCP. Don't ask one agent to cover multiple MCPs. Agent: the `why investigators` line, default `claude --model claude/claude-sonnet-5-5`.
 
 Each investigator's prompt is `references/investigator-prompt.md` filled in, plus:
 - the category playbook `references/sources/<source>.md` for the selected MCP, adapted from the examples in `references/source-playbook.md`
