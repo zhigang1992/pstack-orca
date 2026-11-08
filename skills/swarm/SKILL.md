@@ -6,8 +6,6 @@ disable-model-invocation: true
 
 # Swarm
 
-Fan out N parallel Orca workers. They may cover separate slices, race the same brief, or mix both. The coordinator waits, aggregates, and returns one report.
-
 ## Start
 
 Open a todolist with one entry per phase before launching anything.
@@ -21,37 +19,21 @@ Open a todolist with one entry per phase before launching anything.
 
 1. State the done predicate and the artifact or report the swarm must return.
 2. Choose the shape. Partition into slices, race N workers on identical briefs, or mix both. For a race or mixed shape, declare `first pass`, `rank all`, or `best-of` before spawning.
-3. Set N from the user or derive it from the shape. N is total workers, not the cloud concurrency limit.
-4. Pick the worker from `swarm workers` in the pstack config (project `.pstack-models.md`, then user `~/.pi/agent/pstack-models.md`) when present. Otherwise use `grok`. For an agent race, name each arm's agent up front.
-5. Give each worker its own writable output when it writes. Use an Orca worktree (`--worktree new-child --name <slug>`), a branch, or `/tmp/swarm-<slug>/worker-<n>/`.
+3. Pick the worker from the `swarm workers` line. First hit wins: project `.pstack-models.md`, then `~/.claude/rules/pstack-models.md`, then `~/.pi/agent/pstack-models.md`. If the line is missing, use `grok`. For `auto` or `inherit-parent`, this session does the work. Launch any other value the way the Workers section of **poteto-mode** says. Do not pass a model slug. If a launch fails, say so and run that seat in this session. For an agent race, name each arm's agent up front.
+4. Give each worker its own writable output when it writes. When workers verify or measure commits, each brief names the exact SHAs. A measurement brief also names the method (sample count, what one sample is, order). The worker records both in its result.
 
 ## Phase B: Fan out
 
-Create one Task per worker, then start every worker before waiting. Once per swarm, create the Run; then per worker:
+Spawn all N workers in one turn, on the step 3 agent. A worker that does not need this machine gets `--worktree new-child`. Stay on the current worktree only when the worker needs something on this machine. There is no `environment: "cloud"` and no `cloud_base_branch`. Name a non-default branch in the brief, and the worker checks it out.
 
-```bash
-orca orchestration task-create --spec "<standalone brief>" --json
-orca orchestration worker-start --task <task_id> --worktree <placement> --agent <id> [--model <slug>] --json
-```
-
-Workers launch as fresh agent terminals. Use `--worktree current` when the worker reads your checkout as-is, a new worktree when it writes and could conflict, and `--on <environment>` when the work must run on another machine (the replacement for cloud workers: auth, simulators, or local state that lives elsewhere). When a worker must start from a non-default pushed branch, create its worktree with `--base-branch <ref>`.
-
-Wait for the fleet to settle:
-
-```bash
-orca orchestration check --wait --types worker_done,escalation,question --timeout-ms 900000 --json
-```
-
-Every brief stands alone. Include the goal, scope, exact slice or race arm, how to verify, and what to report. Reports use `PASS`, `ISSUES`, or `BLOCKED` with evidence.
+Every brief stands alone. Include the goal, scope, exact slice or race arm, how to verify, and what to report. Reports use `PASS`, `ISSUES`, or `BLOCKED` with evidence. A worker that can prove a defect reports `ISSUES` and lists every issue it can prove, not only the first.
 
 If a worker drops out, proceed with N-1 and note it.
 
 ## Phase C: Aggregate
 
-Process the `worker_done` deliveries. For coverage, every required slice needs a result. For a race, apply the selection rule declared up front. Use first pass, rank all, or best-of. Do not paste raw worker dumps; `worker-read` a dispatch only when its report is unclear. Release each settled worker (`worker-release`) unless a follow-up task reuses its terminal.
-
-Keep a compact result table, one-line evidenced issues, and explicit gaps or dropouts.
+Read the terminal results. Drop a result that does not record the SHAs and method its brief names, and respawn that worker once. After a second miss, record a gap. A gap does not count as a pass. For coverage, every required slice needs a result. For a race, apply the selection rule declared up front. Use first pass, rank all, or best-of. Do not paste raw worker dumps.
 
 ## Phase D: Report
 
-Return one consolidated in-chat report with the table, issue one-liners, gaps or dropouts, and the race rule when used.
+Return one consolidated in-chat report with a result table, issue one-liners, gaps or dropouts, and the race rule when used.

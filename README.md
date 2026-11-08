@@ -2,9 +2,11 @@
 
 [pstack](https://github.com/cursor/plugins/tree/main/pstack) is [poteto](https://x.com/poteto)'s
 answer to AI slop: the skills she uses every day to ship high-quality code, turning one
-agent into a real engineering team. This repository is **pstack ported from Cursor to
-pi + Orca**. Same skills, same playbooks, same principles. The harness underneath is
-different: skills load through pi, and every "subagent" runs as a supervised Orca worker.
+agent into a real engineering team. Upstream now installs in Claude Code
+(`/plugin marketplace add cursor/plugins`, then `/plugin install pstack@cursor-plugins`,
+commands prefixed `/pstack:`). This repository is that plugin **kept on Claude Code, with
+Orca as the way out to a real second model family**. pi is one of those workers, not the
+parent. The routing contract is [`docs/routing.md`](./docs/routing.md).
 
 the goal is not to maximize loc, in fact it's the opposite. pstack helps you write less,
 but higher quality code.
@@ -50,10 +52,11 @@ new here? the [pstack guide](./docs/guide/README.md) walks you through a first r
 task, from setup and prompting through verification and overnight runs.
 
 that's it. the other skills are situational; the mode skill uses them for you as needed.
-out of the box the mode splits work by agent strength: precisely-specified code goes to
-`codex`, fast mechanical code goes to `grok`, prose and judgment go to `claude`, and `pi`
-rounds out the review panels. [`/skill:setup-pstack`](./skills/setup-pstack/SKILL.md)
-changes any of it.
+out of the box the parent session does judgment and the hardest calls. a brief that
+must be executed to the letter goes to an Orca `codex` worker. fast edits and bulk
+reads go to `grok`. review panels are `codex`, `grok`, and `pi` (pi's default model is
+the kimi seat). a Claude model pin is not a fourth family. [`docs/routing.md`](./docs/routing.md)
+says why, and [`/skill:setup-pstack`](./skills/setup-pstack/SKILL.md) changes any of it.
 
 ## how the port works
 
@@ -64,7 +67,7 @@ changes any of it.
 | `Task` subagents (`subagent_type`, `run_in_background`, model) | `orca orchestration` workers: `task-create` → `worker-start --agent <cli> [--model <m>]` → `check --wait` for `worker_done` |
 | cloud subagents (`environment: "cloud"`) | workers in fresh Orca worktrees, or `--on <environment>` on a paired remote Orca server |
 | `poteto-agent` / Comment Sicko subagent types | dispatch briefs in [`briefs/`](./briefs/), pasted into the worker's task spec |
-| `~/.cursor/rules/pstack-models.mdc` | `~/.pi/agent/pstack-models.md`, read explicitly by the skills at delegation time |
+| `~/.cursor/rules/pstack-models.mdc` | `~/.claude/rules/pstack-models.md` (Claude Code loads it every session). `~/.pi/agent/pstack-models.md` is a mirror. |
 | cursor MCPs (the `why` skill) | connector discovery at run time: installed skills (`lark-*`), CLIs (`gh`, `lark-cli`), MCP servers if your harness has them |
 | cursor transcripts (`agent-transcripts/`) | pi sessions (`~/.pi/agent/sessions/`) and `orca orchestration worker-read` |
 | cursor `/loop` | rolling `orca orchestration check --wait`, or scheduled `orca automations create` |
@@ -186,6 +189,17 @@ one directly. invoke as `/skill:<name>` or just ask for it by name:
 | [`unslop`](./skills/unslop/SKILL.md) | you're cleaning up writing. removes AI tells. |
 | [`bro`](./skills/bro/SKILL.md) | you want the last message restated in plain human language, no jargon. |
 | [`technical-writing`](./skills/technical-writing/SKILL.md) | layered doc standard (Diátaxis + Google developer style + STE + Global English) for docs, RFCs, readmes, PR descriptions, commit messages. |
+| [`benchmark-checklist`](./skills/benchmark-checklist/SKILL.md) | you're about to report or act on a perf number you measured. |
+| [`correct`](./skills/correct/SKILL.md) | agents keep repeating the same mistake in this repo. make that mistake impossible. |
+| [`in-your-own-words`](./skills/in-your-own-words/SKILL.md) | restate the user's goal and the problem, in your own words. |
+| [`ketchup`](./skills/ketchup/SKILL.md) | catch the user up on this chat since their last message, and list every call waiting on them. |
+| [`ketchup-video`](./skills/ketchup-video/SKILL.md) | the same catch-up, as a short subtitled video. |
+| [`sharpen`](./skills/sharpen/SKILL.md) | make a task deeper, not bigger, then rewrite the prompt. |
+| [`poteto-help`](./skills/poteto-help/SKILL.md) | a question about pstack itself: setup, which skill, which playbook. |
+| [`statechart`](./skills/statechart/SKILL.md) | check a TLA+ model of a system that moves between states, and draw it. |
+| [`create-formal-verification-skill`](./skills/create-formal-verification-skill/SKILL.md) | generate a project skill that proves a property tests don't reach. |
+| [`maintain-formal-verification-skill`](./skills/maintain-formal-verification-skill/SKILL.md) | the formal model drifted from the code. bring it back in line. |
+| [`make-bot-ui`](./skills/make-bot-ui/SKILL.md) | a page that wakes a Cursor webhook routine. skipped on Claude Code and Orca. the routine API is not there. |
 
 </details>
 
@@ -248,18 +262,19 @@ directly.
 
 ## principles
 
-twenty-one short skills, one principle each. `poteto-mode` indexes them inline and reads
+twenty-four short skills, one principle each. `poteto-mode` indexes them inline and reads
 that index at task start. the standalone files are there so other skills can reference a
 principle by name, and so the index can point at the full rule for each.
 
 <details>
-<summary>all twenty-one principles</summary>
+<summary>all twenty-four principles</summary>
 
 | principle | group | rule |
 |---|---|---|
 | [laziness-protocol](./skills/principle-laziness-protocol/SKILL.md) | core | Bias toward deletion and the smallest change that solves the problem. |
 | [foundational-thinking](./skills/principle-foundational-thinking/SKILL.md) | core | Apply before writing logic: choosing core types and data structures, sequencing scaffold-vs-feature work, asking what concurrent actors share. Get the data structures right so downstream code becomes obvious. |
 | [redesign-from-first-principles](./skills/principle-redesign-from-first-principles/SKILL.md) | core | Redesign as if the requirement had been a foundational assumption from day one, instead of bolting it on. |
+| [attack-the-premise](./skills/principle-attack-the-premise/SKILL.md) | core | When two or more fixes that share one premise have failed the same gate, write the premise down and test it before another fix that assumes it. |
 | [subtract-before-you-add](./skills/principle-subtract-before-you-add/SKILL.md) | core | Remove dead weight, redundant validators, and stub references first, then build on the simpler base. |
 | [minimize-reader-load](./skills/principle-minimize-reader-load/SKILL.md) | core | Count layers between question and answer, and hidden state in the reader's head; collapse one-caller wrappers and shrink mutable scope. |
 | [outcome-oriented-execution](./skills/principle-outcome-oriented-execution/SKILL.md) | core | Apply during planned rewrites and migrations with explicit phase boundaries. Converge on the target architecture; don't preserve smooth intermediate states with throwaway compatibility code. |
@@ -275,6 +290,8 @@ principle by name, and so the index can point at the full rule for each.
 | [prove-it-works](./skills/principle-prove-it-works/SKILL.md) | verification | Apply after completing a task, before declaring done. Verify against the real artifact (run the feature, read the actual value, inspect the diff), not a proxy, self-report, or 'it compiles.'. |
 | [fix-root-causes](./skills/principle-fix-root-causes/SKILL.md) | verification | Trace each symptom to its root cause and fix it there; reproduce first, ask why until you reach it, resist nil-check guards that silence crashes. |
 | [sequence-verifiable-units](./skills/principle-sequence-verifiable-units/SKILL.md) | verification | Apply to multi-step work (sweeps, migrations, runs of similar edits) and to how you stack commits and PRs. Break work into small units that each end in a verifiable state, check each before the next, and order delivery so the sequence proves itself to a reviewer. |
+| [test-behavior-not-implementation](./skills/principle-test-behavior-not-implementation/SKILL.md) | verification | Assert what the code's users can observe, so the test fails when that behavior breaks and keeps passing when only the internals change. |
+| [explain-the-number](./skills/principle-explain-the-number/SKILL.md) | verification | Before you measure or trust a number, find what limits it and rule out that it measured something other than the work you think. |
 | [guard-the-context-window](./skills/principle-guard-the-context-window/SKILL.md) | delegation | Route bulk to workers; keep summaries in the main thread, not raw payloads. |
 | [never-block-on-the-human](./skills/principle-never-block-on-the-human/SKILL.md) | delegation | Proceed, present the result, let the human course-correct after the fact; reserve confirmation for irreversible actions. |
 | [encode-lessons-in-structure](./skills/principle-encode-lessons-in-structure/SKILL.md) | meta | Encode the rule as a lint, metadata flag, runtime check, or script instead of more text. |
@@ -291,8 +308,9 @@ a few things the original pstack references don't carry over:
 - `/create-skill` is a Cursor built-in. the [authoring-a-skill
   playbook](./skills/poteto-mode/playbooks/authoring-a-skill.md) owns skill authoring
   here.
-- `make-bot-ui` depended on Cursor routines and their webhook sender-key flow. Orca
-  automations are schedule-triggered, so the skill was dropped rather than half-ported.
+- `make-bot-ui` is in the tree, and it still only runs inside Cursor. Orca has no
+  webhook routine or sender-key card, so the skill tells the agent to skip rather
+  than invent one.
 - Cursor's `/goal`, `/loop`, plan mode, and built-in babysit have no pi equivalent; the
   playbooks that used them now hold state in the Orca Run objective + standing orders
   and keep cadence with `check --wait` loops or `orca automations`.
@@ -310,24 +328,32 @@ is layered, most specific first:
 
 1. **project** `.pstack-models.md` at the repo root. per-project and per-use-case; commit
    it to share a team's worker policy with the code it applies to.
-2. **user** `~/.pi/agent/pstack-models.md`. your defaults across every project.
-3. **skill inline defaults.** `grok` / `codex` / `claude` / `pi`, mirroring the original
-   pstack's split of fast mechanical, precise execution, judgment, and a fourth panel
-   family.
+2. **user** `~/.claude/rules/pstack-models.md`. your defaults across every project.
+   Claude Code loads this file into every new session. `~/.pi/agent/pstack-models.md`
+   is a mirror of it, kept so an old lookup cannot disagree.
+3. **skill inline defaults.** the parent thinks (`inherit-parent`). `codex` executes a
+   brief. `grok` does fast edits and bulk reads. panels are `codex, grok, pi`.
 
-a role set in the project file beats the user file; a role absent from both keeps the
-skill default. [`/skill:setup-pstack`](./skills/setup-pstack/SKILL.md) writes either scope
-after detecting which agent CLIs Orca can actually launch on the machine.
+a role set in the project file beats the user file; a role absent from all three keeps
+the skill default. [`/skill:setup-pstack`](./skills/setup-pstack/SKILL.md) writes the
+user file after detecting which agent CLIs Orca has actually launched.
+
+why the defaults look like that is [`docs/routing.md`](./docs/routing.md). the short
+version: under Magpie, pinning opus, sonnet, or haiku does not pick a family. those
+names resolve to one failover group. a Claude Code subagent is that same group. Codex,
+Grok, and pi (pi's default model is the kimi seat) are the three families a panel can
+hold, and they run as Orca workers.
 
 two properties make this portable:
 
 - **config values are agent ids, not model slugs.** agents run their own configured
   default model (a pi worker inherits pi's default model), so model and plan choices
   stay in each user's harness where they belong. `--model` exists only as an optional
-  passthrough for the agents Orca documents it for.
-- **`inherit-parent` / `auto` is a first-class value.** a user with a single agent (one
-  plan, one CLI) sets roles to `inherit-parent` and the whole system still works; panels
-  just lose their cross-family signal, which the skills say out loud instead of hiding.
+  passthrough, and a Magpie group id is not a legal one.
+- **`inherit-parent` / `auto` is a first-class value.** it means this session, not a
+  spawned Claude worker. a user with a single agent sets every role to it and the
+  system still works. panels just lose their cross-family signal, which the skills say
+  out loud instead of hiding.
 
 ## make it yours
 

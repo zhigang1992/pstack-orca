@@ -6,73 +6,43 @@ disable-model-invocation: true
 
 # Arena
 
-Fan out N parallel attempts at the same task. Read every candidate end to end. Pick the strongest as the base. Graft the best ideas from the others into it. Verify the synthesized result.
-
-## Start
-
-Open a todolist with one entry per phase before launching anything. The arena runs autonomously and the list keeps phases from silently disappearing.
-
-1. Frame
-2. Fan out
-3. Cross-judge
-4. Pick
-5. Graft
-6. Verify
+Open a todolist with one entry per phase (Frame, Fan out, Cross-judge, Pick, Graft, Verify) before launching anything.
 
 ## Phase A: Frame
 
-The N candidates will receive the same prompt, so the prompt is the contract. Get it right before spawning anything.
+Every candidate gets the same prompt, so the prompt is the contract.
 
 1. State the artifact each candidate is producing.
-2. Derive the rubric. State what success looks like for *this* task, then turn it into 3-6 concrete gradeable criteria. Concrete: `Adds a --dry-run flag that skips writes`. Vague: `code is correct`. The rubric is the picker's tool in Phase D; candidates only see the task.
-3. Pick the runners. Use `arena runners` from the pstack config (project `.pstack-models.md`, then user `~/.pi/agent/pstack-models.md`) when present. Otherwise default to one worker each on `claude`, `codex`, `grok`, `pi`. Spawn more when the arena covers multiple design directions. Same agent N times when the work is generation-bound rather than judgment-sensitive.
-4. Assign output paths. Each candidate writes to its own location (an Orca worktree where possible: `--worktree new-child --name arena-<slug>-<n> --setup run`; otherwise `/tmp/arena-<slug>/candidate-<n>/`). N candidates writing to the same path is shared mutable state and fails the the **separate-before-serializing-shared-state** principle skill test.
+2. Derive the rubric, 3-6 concrete gradeable criteria for what success looks like on *this* task. It is the picker's tool in Phase D. Candidates only see the task.
+3. Pick the runners. Use the `arena runners` line. First hit wins: project `.pstack-models.md`, then `~/.claude/rules/pstack-models.md`, then `~/.pi/agent/pstack-models.md`. If the line is missing, default to one each of `codex`, `grok`, and `pi`. An `auto` or `inherit-parent` entry is this session, and it still counts as one seat. Launch every other entry as an Orca worker the way the Workers section of **poteto-mode** says. Do not call `Task` and do not pass a model slug. Families are agent ids, not slug prefixes: `codex`, `grok`, and `pi`. `claude` is not a family. If a launch fails, drop that seat and say so. If fewer than two runners remain, add seats from `codex`, `grok`, `pi` that are not already running, or run the missing seat in this session when none remain, and say so. Spawn more runners when the arena covers multiple design directions. Reuse one agent id N times only when the work is generation-bound rather than judgment-sensitive.
+4. Give each candidate its own output location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`), per the **separate-before-serializing-shared-state** principle skill.
 
 ## Phase B: Fan out
 
-Create one Task per candidate and start every worker before waiting, each with the task, the path to the shared grounding, its own output worktree or directory, and instructions to produce both the artifact and a short rationale:
+Spawn all N workers in one turn, each with the task, the path to the shared grounding, its own output path, and instructions to produce the artifact and a short rationale naming the alternatives it considered and what it rejected. A runner that is not this session gets a fresh Orca worktree.
 
-```bash
-orca orchestration task-create --spec "<candidate brief>" --json
-orca orchestration worker-start --task <task_id> --worktree new-child --name arena-<slug>-<n> --agent <runner> --setup run --json
-```
-
-Then `orca orchestration check --wait --types worker_done,escalation,question --timeout-ms 900000 --json` until every candidate settles.
-
-The rationale is mandatory. Without it, the parent cannot tell whether a candidate's structure is principled or accidental, which makes Phase E grafting unreliable. Each rationale names the alternatives the candidate considered and what it rejected.
-
-If a candidate fails to produce output, proceed with N-1 and note the dropout in the synthesis record.
+If a candidate produces no output, proceed with N-1 and note the dropout.
 
 ## Phase C: Cross-judge
 
-After all Phase B candidates complete, choose one agent from the `arena cross-judge pool` in the pstack config (project file first, then user file) when present. Otherwise pick from `claude`, `codex`, `grok`, `pi`. Prefer a different agent family from your own. Dispatch one read-only judge worker on that agent (`--worktree current`; the brief says report-only, no edits). It sees the rubric and the candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with your reading in Phase D, not with the candidates themselves. Spawning while candidates are still writing means the judge sees partial or empty outputs and reports them as dropouts.
+After all Phase B candidates complete, choose one agent from the `arena cross-judge pool` line, same lookup as Phase A. If the line is missing, the pool is `codex`, then `pi`, then `grok`. Spawn one read-only judge. The judge is never the parent's family, as Phase A step 3 defines families. Try only the entries from another family, in pool order. An `auto` or `inherit-parent` entry is this session, so it never judges. The parent is often already Grok via Magpie failover, which is why `codex` is first. If a launch fails, move to the next entry. If no other family launches, skip the judge, pick the base alone in Phase D, and say so. If you do not know the parent's family, try the pool in order, skip `grok` when this session's replies are coming from Grok, and say that the family check was partial. The judge sees the rubric and the candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with your reading in Phase D. Don't spawn it while candidates are still writing. Say read-only in the brief. There is no readonly flag.
 
 ## Phase D: Pick a base
 
-Read every candidate end to end before picking. Skimming N candidates surfaces only the candidate whose surface looks most familiar.
+Read every candidate end to end before picking. Score each against the rubric criterion by criterion, not on holistic feel, and compare with the cross-judge when Phase C ran one. Agreement on the base confirms the pick. Disagreement means one of you is biased or the rubric was ambiguous. Read both rationales before deciding.
 
-Score each candidate against the rubric criterion by criterion, not on holistic feel. Compare against the cross-judge. Agreement on the base confirms the pick. Disagreement means one of you is biased or the rubric was ambiguous. Read both rationales before deciding.
-
-Pick the base on which candidate a future maintainer can extend most easily without breaking invariants. Prefer the cleaner boundary or smaller surface area when two feel tied, per the Laziness Protocol.
-
-Record the pick and the reason in a short synthesis note alongside the base artifact, including the cross-judge's verdict.
+Pick the base a future maintainer can extend most easily without breaking invariants. When two feel tied, prefer the cleaner boundary or smaller API, per the Laziness Protocol.
 
 ## Phase E: Graft
 
-Walk each losing candidate once more and identify what is worth porting into the base. The signal is usually one or two things per candidate, not most of it.
+Walk each losing candidate once more for what is worth porting into the base, usually one or two things per candidate, not most of it. Fold each graft in by hand, per the **redesign-from-first-principles** principle skill, so the result stays coherent under one mental model. Don't paste mechanically.
 
-Fold each graft in by hand, per the **redesign-from-first-principles** principle skill. Don't paste mechanically. The result has to remain coherent under one mental model.
-
-Record what was grafted, from which candidate, and what was rejected and why. The rejection notes are the highest-signal part of the record. Future readers learn from what you considered and dropped, not just what you kept.
-
-When N candidates converge on the same shape, that is a strong agreement signal. Note the convergence in the record and ship the consensus shape. No graft is needed. When N candidates wildly diverge, Phase A was under-specified. Reframe and re-run rather than averaging the divergence.
+If the candidates converge on one shape, that is strong agreement. Note it and ship the consensus shape. No graft is needed. If they wildly diverge, Phase A was under-specified. Reframe and re-run rather than averaging the divergence.
 
 ## Phase F: Verify
 
-The synthesized artifact has to hold up under the same scrutiny as any other output, per the **prove-it-works** principle skill. The arena does not earn you a pass.
-
-If verification surfaces a problem the arena did not catch, either Phase A was wrong (re-frame and re-run) or one candidate caught it and you missed the graft (go back to Phase E). Don't paper over.
+Verify the synthesized artifact like any other output, per the **prove-it-works** principle skill. If verification finds a problem the arena missed, either Phase A was wrong (re-frame and re-run) or a candidate caught it and you missed the graft (go back to Phase E). Don't paper over it.
 
 ## Outputs
 
-One synthesized artifact. One short synthesis note alongside, naming the base, the grafts (with source candidate), the rejections, the dropouts if any, and the verification result.
+One synthesized artifact, with a short synthesis note alongside naming the base and why, the cross-judge's verdict or that Phase C skipped the judge, each graft with its source candidate, what was rejected and why, any convergence or dropouts, and the verification result.

@@ -20,11 +20,11 @@ Run:
 /skill:setup-pstack
 ```
 
-[`/setup-pstack`](../../skills/setup-pstack/SKILL.md) detects the agent CLIs Orca can launch as workers, shows you each role (code delegates, judgment, the review panels), and asks what you want. Answer the questions. It writes `~/.pi/agent/pstack-models.md`, a small config file every pstack skill reads at delegation time.
+[`/setup-pstack`](../../skills/setup-pstack/SKILL.md) detects the agent CLIs Orca has launched as workers, shows you each role (code delegates, judgment, the review panels), and asks what you want. Answer the questions. It writes `~/.claude/rules/pstack-models.md` and mirrors it to `~/.pi/agent/pstack-models.md`. Claude Code loads the first file into every new session. The lookup and the meaning of each value are in [`routing.md`](../routing.md).
 
 You only override what you care about. A role with no line in the config keeps the skill's default. To restore a default later, delete that role's line, or just run `/skill:setup-pstack` again.
 
-Set a role to `inherit-parent` or `auto` and that role runs on your own agent and model instead of a dispatched worker. Both values mean the same thing. For a panel role the value is a list, and one worker runs per entry, so the list length sets the panel size. Setup also configures `swarm workers`, the default agent for every `/skill:swarm` worker unless a race names one per arm.
+Set a role to `inherit-parent` or `auto` and that role runs in this session. Do not spawn a Claude worker for it. A panel value is a list, and one worker runs per entry, so the list length sets the panel size. `claude` with no model flag is not an entry. It is the same Magpie group as the parent. Setup also configures `swarm workers`, the default agent for every `/skill:swarm` worker unless a race names one per arm.
 
 ## Accept the verification offer, or don't
 

@@ -1,35 +1,41 @@
 ---
 name: setup-pstack
-description: Configure which agents and models pstack uses per role. Detects the agent CLIs Orca can launch and writes a config file that overrides the skill defaults. Use for /setup-pstack, "configure pstack models", or changing pstack's agent/model choices.
+description: Configure which agents pstack uses per role. Detects the agent CLIs Orca can launch and writes the Claude Code rule that overrides the skill defaults. Use for /setup-pstack, "configure pstack models", or changing pstack's agent choices.
 ---
 
 # Setup pstack
 
-Write the pstack role-to-worker config. Every value is an Orca worker launch spec: an
-agent CLI id, optionally followed by model flags. The skills read the config and fall
-back to their inline defaults when a line is absent, so this is an override layer, not
-a requirement.
+Write the pstack role-to-worker config. A value is either `inherit-parent` (this session
+does the role) or an Orca agent id, optionally followed by `--model` and `--effort`.
+The contract is `docs/routing.md`. Skills fall back to their inline defaults when a line
+is absent, so this is an override layer, not a requirement.
 
-**The config has two scopes, checked in this order:**
+**The config has three scopes, checked in this order:**
 
 1. `.pstack-models.md` at the project root. Per-project and per-use-case; commit it to
    share a team's worker policy with the repo.
-2. `~/.pi/agent/pstack-models.md`. Per-user, across all projects.
+2. `~/.claude/rules/pstack-models.md`. Per-user, across all projects. Claude Code loads
+   it into every new session. This is the file to write.
+3. `~/.pi/agent/pstack-models.md`. Legacy. Mirror the Claude file here so an old lookup
+   cannot disagree. Do not treat it as a second policy.
 
-A role set in the project file beats the user file; a role absent from both keeps the
-skill's inline default. The repo itself ships no config, so nothing user-specific leaks
-into a published copy.
+A role set in the project file beats the user file. A role absent from all three keeps
+the skill's inline default. The repo itself ships no config, so nothing user-specific
+leaks into a published copy.
 
 ## Steps
 
 ### 1. Detect available agents
 
 Enumerate the agent CLIs Orca can launch as workers. `command -v` each of the known ids:
-`pi`, `claude`, `codex`, `grok`, `omp`, `opencode`, `gemini`, `droid`, `cursor-agent`.
-The detected set is the dependable source. For per-agent model flags, prefer what the
-agent itself reports (`pi --help`, the user's `~/.pi/agent/settings.json`/`models.json`,
-`claude`/`codex` docs) over memory; never write a real model slug you have not confirmed.
-The aliases `inherit-parent` and `auto` are always valid even though they are not detected.
+`pi`, `claude`, `codex`, `grok`, `opencode`, `kimi`, `cursor-agent`. A binary on PATH is
+not enough. The dependable set is the `agent` values in Orca's
+`agent-model-catalog.json` (under Application Support), because that is what has
+actually launched. Do not write an id that is absent from it. `claude` can be present
+and still not be a second family: if its `opus`, `sonnet`, and `haiku` entries resolve
+to a Magpie group, treat bare `claude` as `inherit-parent`. See `docs/routing.md`.
+Never write a `--model` you have not confirmed against that catalog or the agent's own
+help. The aliases `inherit-parent` and `auto` are always valid.
 
 Workers launch through Orca orchestration:
 
@@ -44,11 +50,12 @@ model apply.
 ### 2. Load current state
 
 The default role-to-worker mapping is the config shape shown in step 5 below. Read the
-project file first, then the user file; a role set in the project file wins. If neither
-exists, start from the defaults.
+project file first, then `~/.claude/rules/pstack-models.md`, then the pi file. If none
+exist, start from the defaults.
 
 Ask which scope to write: project (shared with the team) or user (just you, everywhere).
-Default to user scope unless the user asked for a project or team setting.
+Default to user scope unless the user asked for a project or team setting. User scope
+writes the Claude file and mirrors it to the pi path.
 
 ### 3. Map and confirm
 
@@ -73,43 +80,59 @@ the user cannot run breaks every delegation that reads it.
 
 ### 5. Write the config
 
-Write the chosen scope's file (`.pstack-models.md` at the project root, or
-`~/.pi/agent/pstack-models.md`), overwriting the whole file so re-runs stay idempotent.
-Shape:
+Write the chosen scope's file, overwriting the whole file so re-runs stay idempotent.
+User scope writes `~/.claude/rules/pstack-models.md` with no frontmatter, then copies
+the same bytes to `~/.pi/agent/pstack-models.md`. Project scope writes
+`.pstack-models.md` only. Shape:
 
 ```markdown
 # pstack worker configuration. One line per role: `<role>: <agent> [--model <slug>] [--effort <level>]`.
 # Delete a line to fall back to the skill default.
-# `inherit-parent` or `auto` as a value: the role runs on the parent chat's agent and
-# model. Alias entries in a panel list still count toward its fan-out.
-feature, refactoring: grok
+# Lookup, first hit wins: project `.pstack-models.md`, this file, `~/.pi/agent/pstack-models.md`.
+# Contract: docs/routing.md in the pstack-orca checkout.
+#
+# inherit-parent or auto: this session does the role. No model pin. No --agent claude.
+# A Claude model pin is not a second family. Magpie resolves opus, sonnet, and haiku
+# to group/never-stuck[1m]. That group fails over one seat at a time across Claude,
+# Codex, Grok, Cursor, and Kimi. It does not run them together.
+# codex, grok, pi, opencode, cursor: Orca worker-start --agent <id>.
+# Do not pass that word as a Claude Agent model. Do not pass a Magpie group as --model.
+# budget: medium (high). Parent effort only. Workers use their CLI default.
+
+# parent thinks
+judgment and prose: inherit-parent
+hardest tasks: inherit-parent
+how explainer: inherit-parent
+why synthesizer: inherit-parent
+reflect judgment, divergent, synthesizer: inherit-parent
+
+# codex executes a brief
 bug-fix: codex
 perf-issue: codex
 hillclimb: codex
-judgment and prose: claude
-hardest tasks: claude
-how explorer: grok
-how explainer: claude
-how critics: claude, codex, grok, pi
-why investigators: grok
-why synthesizer: claude
 reflect tooling: codex
-reflect judgment, divergent, synthesizer: claude
-arena runners: claude, codex, grok, pi
-arena cross-judge pool: claude, codex, grok, pi
+
+# grok does fast edits and bulk reads
+feature, refactoring: grok
+how explorer: grok
+why investigators: grok
 swarm workers: grok
-architect runners: claude, codex, grok, pi
-interrogate reviewers: claude, codex, grok, pi
+
+# three families. list length is the fan-out. judge pool puts codex first.
+how critics: codex, grok, pi
+arena runners: codex, grok, pi
+arena cross-judge pool: codex, pi, grok
+architect runners: codex, grok, pi
+interrogate reviewers: codex, grok, pi
 ```
 
-Unlike a Cursor `alwaysApply` rule, nothing injects these files into context. The skills
-read them explicitly at delegation time, which keeps the config out of sessions that
-never delegate.
+Claude Code injects `~/.claude/rules/pstack-models.md` into every new session. Skills
+still read it at delegation time. The pi path is a mirror, not a second source.
 
-Note on model flags: prefer agent ids without `--model`. pi, grok, and most agents run
-their own configured default model, so model selection stays in the harness where it
-belongs. Add `--model` only for agents Orca documents the passthrough for (Claude,
-Codex, Cursor) and only when the user named the model.
+Prefer agent ids without `--model`. pi and grok run their own configured default, and
+pi's default is the kimi seat. Add `--model` only when the user named one that Orca's
+catalog lists for that agent. The only Claude pin that leaves the failover group is
+`claude-fable-5-1`.
 
 ### 6. Confirm
 
@@ -123,3 +146,7 @@ or an existing harness). If not, offer once: "want a project-local verification 
 agents can drive the app the way a user does and prove changes work? I can generate one
 with /skill:create-verification-skill." On yes, invoke that skill (resolves wherever
 pstack-orca is installed). On no, move on without pushing.
+
+### 8. Offer a formal verification skill (optional)
+
+Check whether the project already has a formal verification skill (a project skill that runs a model checker, a proof, or another verifier against the code). If not, offer once: "want a formal verification skill, so agents can prove a key property of your code holds in every case in scope, not only the cases tests reach? I can generate one with /skill:create-formal-verification-skill." On yes, invoke that skill. On no, move on without pushing.

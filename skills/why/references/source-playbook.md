@@ -1,6 +1,6 @@
 # Source playbooks
 
-The why skill dispatches one investigator per available evidence category, each reading a single source-specific playbook below. The playbooks are concrete examples for common connectors (MCP servers, CLIs, or skills like `lark-*`); adapt them for whatever connector fills the category in your environment. In a Lark-shop environment, `lark-im` fills team chat, `lark-doc`/`lark-wiki` fill long-form docs, and `lark-task` fills the ticket tracker.
+The why skill spawns one investigator per available evidence category, each reading a single source-specific playbook below. The playbooks are concrete examples for common MCPs. Adapt them for a different MCP in the same category.
 
 | Category | Playbook | Example MCP it documents |
 |---|---|---|

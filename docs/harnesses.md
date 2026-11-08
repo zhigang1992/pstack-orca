@@ -15,10 +15,10 @@ orca orchestration worker-start --task <id> --worktree current --agent codex --j
 orca orchestration worker-start --task <id> --worktree current --agent grok --json
 ```
 
-The defaults mirror the original pstack's model split: `grok` for fast mechanical code,
-`codex` for precisely-specified execution, `claude` for judgment and prose, `pi` as the
-fourth panel family. `/skill:setup-pstack` detects which of these CLIs are actually
-installed before letting you assign them to roles.
+The defaults are in [`routing.md`](./routing.md). The parent session (Claude Code, via
+Magpie's failover group) does judgment. `codex` and `grok` are Orca workers. `pi` is the
+third panel family, not the parent. `/skill:setup-pstack` writes
+`~/.claude/rules/pstack-models.md` and will not assign an agent Orca has never launched.
 
 What a worker sees when it starts:
 
@@ -58,10 +58,11 @@ skills as its own slash commands). Asking for a skill by name works everywhere.
 
 ### What transfers cleanly
 
-- All 21 principles and all 22 playbooks (pure prose).
+- All 24 principles and all 23 playbooks (pure prose).
 - Every Orca mechanism: workers, dispatch, automations, worktrees, benny.
-- `~/.pi/agent/pstack-models.md` is just a file the skills read by path. It's an odd
-  home when pi isn't in the picture, but nothing breaks. Point the skills at any copy.
+- The user config is `~/.claude/rules/pstack-models.md`. Claude Code loads it every
+  session. `~/.pi/agent/pstack-models.md` is a mirror. Skills read the Claude file
+  first. See [`routing.md`](./routing.md).
 
 ### What's pi-flavored today
 

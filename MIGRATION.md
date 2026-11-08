@@ -8,7 +8,7 @@ reasoning where the mapping is not one-to-one.
 
 pstack's architecture is three layers, and they port unevenly:
 
-1. **Content** (21 principles, 22 playbooks, skill bodies, writing rules). Harness
+1. **Content** (24 principles, 23 playbooks, skill bodies, writing rules). Harness
    agnostic. Ported verbatim except where the prose names a Cursor mechanism.
 2. **Orchestration** (subagent fan-out, model panels, cloud workers, wake loops).
    Cursor-specific on the surface, but the *shape* maps cleanly onto Orca orchestration.
@@ -34,8 +34,8 @@ from Orca for free.
 | `environment: "cloud"` cloud agents | workers in fresh Orca worktrees (`--worktree new-child` / `new-top-level --setup run`), or `--on <environment>` on a paired remote Orca server | Cursor cloud agents couldn't see local state; same rule here, so briefs still inline or point at repo paths. |
 | `cloud_base_branch` | `--base-branch <ref>` on worktree creation | |
 | `agents/poteto-agent.md`, `agents/comment-sicko.md` subagent types | `briefs/` directory: paste the brief into the worker's task spec | Orca has no subagent-type registry. The brief carries the same instruction (read poteto-mode in full first). |
-| `~/.cursor/rules/pstack-models.mdc` (`alwaysApply: true`) | `~/.pi/agent/pstack-models.md`, read explicitly by skills at delegation time | pi has no always-apply rule file; explicit reads are strictly better here because the config stays out of sessions that never delegate. |
-| Model slugs (`grok-4.6-fast-xhigh`, `gpt-5.6-sol-max`, `claude-fable-5-thinking-max`, `claude-opus-5-thinking-xhigh`) | Orca agent ids + optional `--model`: `grok`, `codex`, `claude`, `pi` | Defaults keep the original's family diversity (fast mechanical / precise execution / judgment / fourth panel family). `setup-pstack` detects launchable agents with `command -v`. |
+| `~/.cursor/rules/pstack-models.mdc` (`alwaysApply: true`) | `~/.claude/rules/pstack-models.md`, which Claude Code loads every session, mirrored to `~/.pi/agent/pstack-models.md` | Upstream's Claude adapter writes this path too, then drops non-Claude slugs onto the session model. This fork does not. A non-Claude value is an Orca worker. See `docs/routing.md`. |
+| Model slugs (`grok-4.6-fast-xhigh`, `gpt-5.6-sol-max`, `claude-fable-5-thinking-max`, `claude-opus-5-thinking-xhigh`) | Orca agent ids + optional `--model`: `grok`, `codex`, `pi`. Bare `claude` is `inherit-parent` | Under Magpie, opus/sonnet/haiku are one failover group, so a Claude worker is not a panel family. Judgment stays in the parent session. |
 | `inherit-parent` / `auto` role aliases | same aliases; meaning changed to "run the role on the parent chat's own agent and model" | For singleton roles that means doing the step inline; for panels it counts toward fan-out as before. |
 | MCP discovery (the `why` skill) | connector discovery at run time: installed pi skills (`lark-*` for chat/docs/tasks), CLIs (`gh`, `lark-cli`), MCP servers if the harness exposes them | The seven evidence categories and per-source playbooks are unchanged; they're explicitly example vocabularies adapted per connector. |
 | Cursor transcripts (`~/.cursor/projects/<slug>/agent-transcripts/`) | pi sessions (`~/.pi/agent/sessions/<--dir-slug-->/*.jsonl`), `/session` for the active one, `orca orchestration worker-read --dispatch <id>` for workers | Affects `recall`, `reflect`, `automate-me`, `session-pickup`, `eval`, `show-me-your-work`, and `scripts/worktree-audit.sh`. |
@@ -47,7 +47,7 @@ from Orca for free.
 | Cursor built-in `create-skill` | the authoring-a-skill playbook, updated for pi's skill format and discovery paths | |
 | `cursor-team-kit` (`deslop`, `control-ui`, `control-cli`) | `unslop` for prose; **ego-browser** for web UIs; the real CLI/TUI in a terminal for CLIs | `deslop` (code-level slop) has no shipped equivalent; `no-comments` plus an explicit ask covers most of it. |
 | Cursor plan mode | dropped | The original README leaned on it; pstack's stance ("the best spec is code") needs no replacement. |
-| `make-bot-ui` skill | **dropped** | It depended on Cursor routines' webhook + sender-key flow. Orca automations are schedule-triggered, so there is no honest port today. |
+| `make-bot-ui` skill | shipped, and it still refuses outside Cursor | It depends on Cursor routines' webhook + sender-key flow. The skill says to skip on Claude Code and Orca rather than invent that API. |
 | Cursor automations (benny pack, `.cursor/automations/`) | scheduled Orca automations; pack installs at `.orca/benny/`; Slack triggers become scheduled channel scans | The trigger model changes from event (new Slack message) to polling (every 15 minutes), because Orca automations are cron/RRULE-based. Lark via `lark-im` is the first-class chat adapter in this environment. |
 | `.cursor/settings.json` plugin enable (benny) | `.pi/settings.json` `skills` entry or `pi install -l` | |
 | Graphite (`gt`), `gh`, the watch-pr and orch scripts | unchanged | Harness-agnostic from the start. |
@@ -69,9 +69,9 @@ from Orca for free.
   15-minute scan keeps the same outcomes with bounded latency and is idempotent by
   watermark. If Orca later gains event triggers, only the two prompt templates and the
   setup checklist change.
-- **`make-bot-ui` was dropped rather than half-ported.** Its entire flow was Cursor
-  routines. Recreating it needs an incoming-webhook surface Orca doesn't expose to
-  automations today.
+- **`make-bot-ui` is present and still Cursor-only.** Its flow is Cursor routines.
+  On Claude Code and Orca the skill skips instead of inventing a webhook. Recreating
+  it needs an incoming-webhook surface Orca doesn't expose to automations today.
 
 ## Other harnesses
 
