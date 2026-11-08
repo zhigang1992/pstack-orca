@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Blast radius
 
-Find what a change breaks somewhere else, before it ships. Use for "blast radius of X", "what could this break", or reviewing a small diff you don't trust yet.
+Find what a change breaks somewhere else, before it ships. Use for "blast radius of X", "what could this break", or reviewing a small diff you don't trust yet. A small diff you can read and prove in this chat stays in this workspace. Start a child workspace (`--worktree new-child`) only when the proof is wide enough to crowd this chat. A question that does not modify code is not by itself a reason to leave.
 
 Companion to `how` and `why`. `how` tells you what the code does. `why` tells you why it's shaped that way. Blast radius tells you what it breaks somewhere else.
 

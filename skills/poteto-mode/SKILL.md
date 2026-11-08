@@ -28,7 +28,7 @@ Remaining triggers:
 - Docs, RFCs, readmes, PR descriptions, or commit messages → the **technical-writing** skill (`/technical-writing`).
 - Before commit → `/unslop` on prose and `/no-comments` on comments. `/deslop` is a Cursor skill and is not installed. Do not look for it.
 - Before review → the **no-comments** skill (`/no-comments`).
-- Shipping UI / IDE / CLI → an Orca coding agent, `--agent claude`, not a terminal you open yourself. Upstream names `control-cli` and `control-ui` from `cursor-team-kit`. Those are not installed. The agent drives a browser with ego-browser and a CLI or TUI itself. A separate lane, owner, or verifier gets its own Orca workspace (`--worktree new-top-level`). Do not open a shell to stand in for that agent. For bug fixes, reproduce first on the same surface yourself. Hand to the user only under the narrow Bug fix step 1 exception.
+- Shipping UI / IDE / CLI → an Orca coding agent, `--agent claude`, not a terminal you open yourself. Upstream names `control-cli` and `control-ui` from `cursor-team-kit`. Those are not installed. The agent drives a browser with ego-browser and a CLI or TUI itself. A straight repro on the branch you are on stays in this workspace. A separate lane or a verifier who is not the author is a child workspace (`--worktree new-child`), never a sibling. For bug fixes, reproduce first on the same surface yourself. Hand to the user only under the narrow Bug fix step 1 exception.
 - Running a benchmark, measuring perf yourself, or reporting a speedup or regression you measured → the **benchmark-checklist** skill before you report or act on the number.
 - Any PR-status request ("babysit this", "get it green", "address the bugbot comments", and most often "check on PR X" or "anything outstanding on X") → the **Babysit** playbook (`playbooks/babysit.md`), not Cursor's built-in babysit skill, whose description matches the same words. Never triggered by merely opening a PR. Declare its mode before polling. The playbook's step 1 owns the request-to-mode mapping. Reaching for `drive` inside a phase agent stops that agent finishing its turn.
 - Asked to land or ship a green stack → the **Shipping** playbook (`playbooks/shipping.md`). Green is not safe. Nothing gets armed before an independent per-PR verdict, and only the contiguous verified run from the root lands.
@@ -102,7 +102,20 @@ orca orchestration task-create --spec "<brief>" --json
 orca orchestration worker-start --task <id> --worktree current --agent claude --model <slug> --json
 ```
 
-Pass `--model` from the role line. The short aliases `opus`, `sonnet`, and `haiku` are not models. They resolve to `group/never-stuck`. Never pass that group. Pass `--effort` only when the line includes it. Where a playbook says `environment: "cloud"`, or the work is a separate lane, owner, or verifier, start an Orca coding agent in its own workspace: `--worktree new-top-level`. Use `--worktree current` only when the worker must continue this workspace's uncommitted state. Use `--on <environment>` for a paired remote. Do not open a terminal yourself. A read-only reviewer says so in the brief. There is no readonly flag.
+Pass `--model` from the role line. The short aliases `opus`, `sonnet`, and `haiku` are not models. They resolve to `group/never-stuck`. Never pass that group. Pass `--effort` only when the line includes it. Use `--on <environment>` for a paired remote. Do not open a terminal yourself. A read-only reviewer says so in the brief. There is no readonly flag.
+
+**Where the worker runs.** You decide. Do not ask the user. Say the choice in one line, then do it. A skill being on the second list does not mean it always leaves.
+
+Stay in this workspace (`--worktree current`) when the work is one straight change on the checkout you already have, or a question that does not modify code and fits in this chat. A narrow "how does this function work", "why is this line here", or "what could this small diff break" stays here. So does a local fix, the single owner of the branch you are on, a doc or skill you are writing here, or a follow-up that needs these uncommitted files.
+
+Start an Orca coding agent in a **child** workspace (`--worktree new-child`) only when leaving is worth it: several angles at once, a second opinion, a parallel candidate, a verifier who must not be the author, or work that would crowd or dirty this workspace. Never `--worktree new-top-level`. A child hangs off this workspace. A top-level one is a sibling, and that is not what we want.
+
+Where a playbook says `environment: "cloud"`, that means a child workspace when you do leave, not a Cursor VM, and not a reason to leave for a small question.
+
+| When it stays here | When a child is worth it |
+|---|---|
+| feature, refactoring, bug-fix, perf-issue, hillclimb, with one owner already on that branch. no-comments, unslop, technical-writing, tdd, correct, setup-pstack, automate-me, the verification skills. Opening the PR for this branch. | |
+| A small read: one module in `how`, one source in `why`, a short `teach`, a `blast-radius` you can prove in this chat, a `recall` of one or two chats. | `how` or `why` or `teach` once the question spans several slices or evidence sources. `swarm`, `arena`, `architect`, `interrogate`, `reflect` when you actually fan out. `recall` across a long history. `figure-it-out` when it fans out. A verifier who did not write the code. Each extra PR owner. A live lane. A throwaway prototype. |
 
 Defaults when the line is missing: `claude --model claude/claude-sonnet-5-5` for feature, refactoring, how explorer, why investigators, and swarm. `claude --model claude/claude-opus-5-5` for bug-fix, perf, hillclimb, and reflect tooling. `claude --model claude-fable-5-1` for the hardest tasks. `inherit-parent` for judgment, how explainer, why synthesizer, and reflect judgment. Panels are fable, Opus 5.5, and Sonnet 5.5. The arena judge tries fable first.
 

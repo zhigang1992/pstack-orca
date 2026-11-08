@@ -113,7 +113,7 @@ Close calls:
 
 Not in pstack:
 
-- `/deslop`, `control-cli`, and `control-ui` are Cursor skills. This fork uses `/unslop`, `/no-comments`, and an Orca coding agent (ego-browser for a web UI, the agent itself for a CLI) in its own workspace when the work is separate. Do not install `cursor-team-kit`, and do not open a terminal to stand in for that agent.
+- `/deslop`, `control-cli`, and `control-ui` are Cursor skills. This fork uses `/unslop`, `/no-comments`, and an Orca coding agent (ego-browser for a web UI, the agent itself for a CLI) in a child workspace (`--worktree new-child`) when the work is exploration or separate, and in this workspace when it is a straight change. Never a sibling workspace. Do not install `cursor-team-kit`, and do not open a terminal to stand in for that agent.
 - `/loop` and `/create-skill` are Cursor built-ins. Author a skill with the authoring-a-skill playbook.
 - pstack has no `/orchestrate` skill. Orchestrate is a `/poteto-mode` playbook. If the slash menu shows `/orchestrate`, another plugin provides it.
 

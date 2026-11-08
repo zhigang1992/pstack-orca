@@ -24,7 +24,7 @@ Open a todolist with one entry per phase before launching anything.
 
 ## Phase B: Fan out
 
-Spawn all N workers in one turn, on the step 3 agent. Each worker is an Orca coding agent in its own Orca workspace (`--worktree new-top-level`). Stay on `--worktree current` only when the worker must use this workspace's uncommitted state. There is no `environment: "cloud"` and no `cloud_base_branch`. Name a non-default branch in the brief, and the worker checks it out. Do not open a terminal yourself.
+Spawn all N workers in one turn, on the step 3 agent. Swarm is parallel coverage, so each worker is an Orca coding agent in a child workspace (`--worktree new-child`), never `new-top-level`. Stay on `--worktree current` only when that one worker must use this workspace's uncommitted state. There is no `environment: "cloud"` and no `cloud_base_branch`. Name a non-default branch in the brief, and the worker checks it out. Do not open a terminal yourself.
 
 Every brief stands alone. Include the goal, scope, exact slice or race arm, how to verify, and what to report. Reports use `PASS`, `ISSUES`, or `BLOCKED` with evidence. A worker that can prove a defect reports `ISSUES` and lists every issue it can prove, not only the first.
 

@@ -2,7 +2,7 @@
 
 Invoked at the end of every other playbook.
 
-**Worktree.** Work from a git worktree off main. An Orca worker on `--worktree current` inherits this workspace. A separate worker gets its own Orca workspace (`--worktree new-top-level`), not a terminal and not a second writer in this checkout. Two workers that would otherwise write the same branch each get their own workspace, or one finishes and the next does `git fetch && git reset --hard origin/<branch>` before it starts. Dirty branch with unrelated work: patch out, fresh workspace, apply. Snarled worktree: reset from main, redo minimally.
+**Worktree.** Work from a git worktree off main. Opening the PR for the branch you are on stays in this workspace (`--worktree current`). A second writer is an Orca coding agent in a child workspace (`--worktree new-child`), never `new-top-level` and never a terminal. Or one finishes and the next does `git fetch && git reset --hard origin/<branch>` before it starts. Dirty branch with unrelated work: patch out, child workspace, apply. Snarled worktree: reset from main, redo minimally.
 
 **Commits.** Commit liberally. Rebase into small, ordered commits before opening PRs. Each commit is a future PR: landable, ordered to tell the story. Amend when the fix belongs in a just-made commit. New commit when separable. Commit bodies don't restate the subject.
 

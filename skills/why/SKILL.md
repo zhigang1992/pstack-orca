@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Investigate the motivation and intent behind code. The companion `how` skill answers what the code does and how it works. `why` answers what forces led to its shape.
 
-Each spawn below names a role line and a default. Lookup and launch follow the Workers section of **poteto-mode**. The agent is `claude`. Pass only the model that line names.
+A question you can answer from the code and one or two sources stays in this session. Do not start a child workspace for it. Spawn investigators, each a Claude Code worker in a child workspace (`--worktree new-child`), only when the question needs several evidence sources at once. Each spawn names a role line and a default. Lookup and launch follow the Workers section of **poteto-mode**. The agent is `claude`. Pass only the model that line names.
 
 Investigators and the synthesizer need the evidence tools the transcript points at. The brief allows those reads and forbids writing the repo. Do not mark the worker read-only in a way that strips those tools.
 

@@ -68,7 +68,7 @@ Tests alone are not sufficient verification. A PR is verified only when its unit
 
 ### Boot recipe, for every live lane
 
-Each live lane is its own Orca coding agent (`--agent claude`) in a new Orca workspace (`--worktree new-top-level`) at the PR head. The agent drives a browser with ego-browser and a CLI itself. Do not open a terminal for the lane. There is no Cursor cloud VM.
+Each live lane is its own Orca coding agent (`--agent claude`) in a child workspace (`--worktree new-child`, never `new-top-level`) at the PR head. The agent drives a browser with ego-browser and a CLI itself. Do not open a terminal for the lane. There is no Cursor cloud VM.
 
 - [ ] `git fetch origin <head-branch> && git checkout <head SHA>`.
 - [ ] <Start the backend and the surface. Wait for ready.>

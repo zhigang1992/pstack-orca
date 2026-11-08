@@ -9,6 +9,17 @@ orca orchestration worker-start --task <id> --worktree current --agent claude --
 
 Do not pass `--agent codex`, `grok`, `pi`, `opencode`, `opencode2`, or `cursor`. Do not call Claude Code `Task` with a model slug. Upstream's Claude adapter drops non-Claude slugs onto the session model.
 
+## Where the worker sits
+
+The agent decides. It does not ask.
+
+| The task | Workspace |
+|---|---|
+| A straight change on this checkout, or a question that does not modify code and fits in this chat | `--worktree current` |
+| Several angles at once, a second opinion, a parallel candidate, a verifier who is not the author, or work that would crowd or dirty this checkout | `--worktree new-child` |
+
+Being a skill that sometimes explores (`how`, `why`, `teach`, `blast-radius`, `recall`) is not a reason to leave. A narrow question stays here. A child workspace hangs off this one. `--worktree new-top-level` is a sibling. Do not use it. The split per skill is in the Workers section of `skills/poteto-mode/SKILL.md`.
+
 ## Where the file is read
 
 First hit wins. A role missing from all three keeps the skill's inline default.

@@ -8,13 +8,13 @@ disable-model-invocation: true
 
 Explore the codebase to answer "how does X work?" questions. Produce architectural explanations at the level of a senior engineer onboarding onto a subsystem, enough to build a working mental model, not so much that it reads like annotated source code.
 
-Explorers and explainers are Claude Code workers, not Task subagents. The brief says read-only. Explorers use the `how explorer` line (default `claude --model claude/claude-sonnet-5-5`). Every explainer uses the `how explainer` line (default `inherit-parent`, this session). Lookup and launch follow the Workers section of **poteto-mode**. Pass only the model that line names.
+A simple question stays in this session. Do not start a worker or a child workspace for it. Explorers exist only for a complex question, and each one is then a Claude Code worker in a child workspace (`--worktree new-child`). The brief says read-only. Explorers use the `how explorer` line (default `claude --model claude/claude-sonnet-5-5`). Every explainer uses the `how explainer` line (default `inherit-parent`, this session). Lookup and launch follow the Workers section of **poteto-mode**. Pass only the model that line names.
 
 ## 1. Assess complexity
 
 If the scope is ambiguous, state your interpretation and explore. The user can redirect.
 
-- **Simple** (a single module, a small utility, a narrow question such as "how does function X work"): no explorers. Spawn one explainer that explores and explains in one pass, built from `references/explainer-prompt.md` without the explorer-findings section. Go to step 4.
+- **Simple** (a single module, a small utility, a narrow question such as "how does function X work"): no explorers and no child workspace. Answer in this session, in one pass, from `references/explainer-prompt.md` without the explorer-findings section. Go to step 4.
 - **Complex** (a subsystem spanning multiple files or services, a cross-cutting feature, a full architectural overview): go to step 2.
 
 When in doubt, take the simple path.

@@ -19,7 +19,7 @@ Every candidate gets the same prompt, so the prompt is the contract.
 
 ## Phase B: Fan out
 
-Spawn all N workers in one turn, each with the task, the path to the shared grounding, its own output path, and instructions to produce the artifact and a short rationale naming the alternatives it considered and what it rejected. A runner that is not this session is an Orca coding agent in its own Orca workspace (`--worktree new-top-level`).
+Spawn all N workers in one turn, each with the task, the path to the shared grounding, its own output path, and instructions to produce the artifact and a short rationale naming the alternatives it considered and what it rejected. A runner that is not this session is an Orca coding agent in a child workspace (`--worktree new-child`). Arena candidates are separate attempts, so they do not share this checkout. Never `new-top-level`.
 
 If a candidate produces no output, proceed with N-1 and note the dropout.
 
